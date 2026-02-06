@@ -3,6 +3,7 @@ use crate::session::{
 };
 use chrono::{DateTime, Utc};
 use serde::Serialize;
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
@@ -67,19 +68,22 @@ pub fn detect_and_enrich_sessions() -> Result<Vec<Session>, String> {
         .map_err(|e| format!("Failed to detect sessions: {}", e))?;
 
     let mut sessions = Vec::new();
+    let mut seen_ids: HashSet<String> = HashSet::new();
 
     for detected in detected_sessions {
         // Get session ID - if not found, skip this session
         let session_id = match &detected.session_id {
             Some(id) => id.clone(),
             None => {
-                eprintln!(
-                    "Skipping session with PID {} - no session ID found",
-                    detected.pid
-                );
                 continue;
             }
         };
+
+        // Skip duplicate session IDs (same session can appear in multiple project dirs)
+        if seen_ids.contains(&session_id) {
+            continue;
+        }
+        seen_ids.insert(session_id.clone());
 
         // Try to parse sessions-index.json to get basic info (optional)
         let index_path = detected.project_path.join("sessions-index.json");
