@@ -109,10 +109,14 @@ pub fn detect_and_enrich_sessions() -> Result<Vec<Session>, String> {
             ),
             None => {
                 // Session not in index yet (still running) - use fallback values
-                // Try to get first prompt from JSONL file
                 let session_file_path = detected.project_path.join(format!("{}.jsonl", session_id));
+
+                // Try to get first prompt from JSONL file
                 let first_prompt = get_first_prompt_from_jsonl(&session_file_path)
                     .unwrap_or_else(|| "(Active session)".to_string());
+
+                // Count messages in the file
+                let message_count = count_messages_in_jsonl(&session_file_path);
 
                 // Get file modification time
                 let modified = std::fs::metadata(&session_file_path)
@@ -124,7 +128,7 @@ pub fn detect_and_enrich_sessions() -> Result<Vec<Session>, String> {
                     })
                     .unwrap_or_default();
 
-                (first_prompt, 0, modified, None)
+                (first_prompt, message_count, modified, None)
             }
         };
 
@@ -200,6 +204,28 @@ fn truncate_string(s: &str, max_len: usize) -> String {
     } else {
         format!("{}...", &s[..max_len])
     }
+}
+
+/// Count user/assistant messages in a JSONL file
+fn count_messages_in_jsonl(path: &Path) -> u32 {
+    let file = match File::open(path) {
+        Ok(f) => f,
+        Err(_) => return 0,
+    };
+    let reader = BufReader::new(file);
+    let mut count = 0u32;
+
+    for line in reader.lines().flatten() {
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) {
+            if let Some(msg_type) = value.get("type").and_then(|t| t.as_str()) {
+                if msg_type == "user" || msg_type == "assistant" {
+                    count += 1;
+                }
+            }
+        }
+    }
+
+    count
 }
 
 #[cfg(test)]
