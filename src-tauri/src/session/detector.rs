@@ -90,45 +90,51 @@ impl SessionDetector {
         let thirty_mins_ago = now - std::time::Duration::from_secs(30 * 60);
 
         for project_dir in project_dirs {
-            let index_path = project_dir.join("sessions-index.json");
+            // First, find all JSONL files in the project directory that were recently modified
+            // This catches sessions that aren't in the index yet (currently running)
+            if let Ok(entries) = fs::read_dir(project_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
 
-            if let Ok(content) = fs::read_to_string(&index_path) {
-                if let Ok(index) = serde_json::from_str::<SessionsIndex>(&content) {
-                    if let Some(entries) = &index.entries {
-                        for entry in entries {
-                            // Check if session file was recently modified
-                            if let Some(full_path) = &entry.full_path {
-                                let session_path = PathBuf::from(full_path);
-                                if let Ok(metadata) = fs::metadata(&session_path) {
-                                    if let Ok(modified) = metadata.modified() {
-                                        if modified > thirty_mins_ago {
-                                            // This is a recently active session
-                                            let project_path = entry.project_path
-                                                .as_ref()
-                                                .map(PathBuf::from)
-                                                .unwrap_or_else(|| project_dir.clone());
-
-                                            let project_name = project_path
-                                                .file_name()
-                                                .and_then(|n| n.to_str())
-                                                .unwrap_or("unknown")
-                                                .to_string();
-
-                                            // Assign a process (round-robin if multiple)
-                                            let pid = if !processes.is_empty() {
-                                                processes[sessions.len() % processes.len()].pid
-                                            } else {
-                                                0
-                                            };
-
-                                            sessions.push(DetectedSession {
-                                                pid,
-                                                cwd: project_path.clone(),
-                                                project_path: project_dir.clone(),
-                                                session_id: Some(entry.session_id.clone()),
-                                                project_name,
+                    // Check if it's a JSONL file (not in subagents directory)
+                    if path.is_file()
+                        && path.extension().map_or(false, |ext| ext == "jsonl")
+                    {
+                        if let Ok(metadata) = fs::metadata(&path) {
+                            if let Ok(modified) = metadata.modified() {
+                                if modified > thirty_mins_ago {
+                                    // Extract session ID from filename
+                                    if let Some(session_id) = path.file_stem()
+                                        .and_then(|s| s.to_str())
+                                        .map(|s| s.to_string())
+                                    {
+                                        // Try to get project info from sessions-index.json
+                                        let (project_path, project_name) = self
+                                            .get_project_info_from_index(project_dir, &session_id)
+                                            .unwrap_or_else(|| {
+                                                // Fallback: derive from project directory name
+                                                let name = project_dir
+                                                    .file_name()
+                                                    .and_then(|n| n.to_str())
+                                                    .unwrap_or("unknown")
+                                                    .to_string();
+                                                (project_dir.clone(), name)
                                             });
-                                        }
+
+                                        // Assign a process (round-robin if multiple)
+                                        let pid = if !processes.is_empty() {
+                                            processes[sessions.len() % processes.len()].pid
+                                        } else {
+                                            0
+                                        };
+
+                                        sessions.push(DetectedSession {
+                                            pid,
+                                            cwd: project_path.clone(),
+                                            project_path: project_dir.clone(),
+                                            session_id: Some(session_id),
+                                            project_name,
+                                        });
                                     }
                                 }
                             }
@@ -139,6 +145,50 @@ impl SessionDetector {
         }
 
         sessions
+    }
+
+    /// Get project info from sessions-index.json for a given session ID
+    fn get_project_info_from_index(
+        &self,
+        project_dir: &Path,
+        session_id: &str,
+    ) -> Option<(PathBuf, String)> {
+        let index_path = project_dir.join("sessions-index.json");
+
+        if let Ok(content) = fs::read_to_string(&index_path) {
+            if let Ok(index) = serde_json::from_str::<SessionsIndex>(&content) {
+                if let Some(entries) = &index.entries {
+                    for entry in entries {
+                        if entry.session_id == session_id {
+                            if let Some(proj_path) = &entry.project_path {
+                                let path = PathBuf::from(proj_path);
+                                let name = path
+                                    .file_name()
+                                    .and_then(|n| n.to_str())
+                                    .unwrap_or("unknown")
+                                    .to_string();
+                                return Some((path, name));
+                            }
+                        }
+                    }
+
+                    // If session not found in index, use first entry's project path as fallback
+                    if let Some(first) = entries.first() {
+                        if let Some(proj_path) = &first.project_path {
+                            let path = PathBuf::from(proj_path);
+                            let name = path
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("unknown")
+                                .to_string();
+                            return Some((path, name));
+                        }
+                    }
+                }
+            }
+        }
+
+        None
     }
 
     /// Finds all processes with name "claude"
