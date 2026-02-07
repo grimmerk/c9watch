@@ -3,7 +3,7 @@ use super::parser::{SessionEntry, MessageContent, AssistantMessage};
 
 /// Represents the current status of a Claude Code session
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub enum SessionStatus {
     /// Claude is actively executing tools or thinking
     Working,

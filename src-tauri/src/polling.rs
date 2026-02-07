@@ -143,7 +143,7 @@ pub fn detect_and_enrich_sessions() -> Result<Vec<Session>, String> {
             id: session_id,
             pid: detected.pid,
             project_name: detected.project_name,
-            project_path: detected.project_path.to_string_lossy().to_string(),
+            project_path: detected.cwd.to_string_lossy().to_string(),
             git_branch,
             first_prompt,
             message_count,

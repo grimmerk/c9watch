@@ -86,8 +86,8 @@ async fn stop_session(pid: u32) -> Result<(), String> {
 
 /// Open a session in its parent application
 #[tauri::command]
-async fn open_session(session_id: String) -> Result<(), String> {
-    open_session_action(session_id)
+async fn open_session(pid: u32, project_path: String) -> Result<(), String> {
+    open_session_action(pid, project_path)
 }
 
 /// Conversation structure for the frontend

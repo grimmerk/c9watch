@@ -1,24 +1,28 @@
 <script lang="ts">
-	import { selectedSessionId, sessions, currentConversation } from '$lib/stores/sessions';
+	import {
+		sortedSessions,
+		expandedSessionId,
+		currentConversation,
+		attentionCount
+	} from '$lib/stores/sessions';
 	import { getConversation, sendPrompt, stopSession, openSession } from '$lib/api';
-	import SessionList from '$lib/components/SessionList.svelte';
-	import ConversationView from '$lib/components/ConversationView.svelte';
-	import PromptInput from '$lib/components/PromptInput.svelte';
+	import DashboardHeader from '$lib/components/DashboardHeader.svelte';
+	import SessionCard from '$lib/components/SessionCard.svelte';
+	import ExpandedCardOverlay from '$lib/components/ExpandedCardOverlay.svelte';
+	import type { Session } from '$lib/types';
 
-	let currentSessionId = $derived($selectedSessionId);
-	let currentSessions = $derived($sessions);
+	let sessions = $derived($sortedSessions);
+	let expandedId = $derived($expandedSessionId);
+	let conversation = $derived($currentConversation);
+	let attention = $derived($attentionCount);
 
-	// Get selected session details
-	let selectedSession = $derived(
-		currentSessions.find((s) => s.id === currentSessionId) || null
-	);
+	let expandedSession = $derived(sessions.find((s) => s.id === expandedId) || null);
 
-	// Fetch conversation when a session is selected
 	$effect(() => {
-		if (currentSessionId) {
-			getConversation(currentSessionId)
-				.then((conversation) => {
-					currentConversation.set(conversation);
+		if (expandedId) {
+			getConversation(expandedId)
+				.then((conv) => {
+					currentConversation.set(conv);
 				})
 				.catch((error) => {
 					console.error('Failed to fetch conversation:', error);
@@ -29,242 +33,316 @@
 		}
 	});
 
-	async function handleSendPrompt(prompt: string) {
-		if (!currentSessionId) return;
+	function handleExpand(session: Session) {
+		expandedSessionId.set(session.id);
+	}
 
+	function handleClose() {
+		expandedSessionId.set(null);
+	}
+
+	async function handleApprove(sessionId: string) {
 		try {
-			await sendPrompt(currentSessionId, prompt);
+			await sendPrompt(sessionId, 'y');
+		} catch (error) {
+			console.error('Failed to approve:', error);
+		}
+	}
+
+	async function handleSend(sessionId: string, prompt: string) {
+		try {
+			await sendPrompt(sessionId, prompt);
 		} catch (error) {
 			console.error('Failed to send prompt:', error);
 		}
 	}
 
-	async function handleStop() {
-		if (!currentSessionId) return;
-
+	async function handleStop(pid: number) {
 		try {
-			await stopSession(currentSessionId);
+			await stopSession(pid);
 		} catch (error) {
 			console.error('Failed to stop session:', error);
 		}
 	}
 
-	async function handleOpen() {
-		if (!currentSessionId) return;
-
+	async function handleOpen(pid: number, projectPath: string) {
 		try {
-			await openSession(currentSessionId);
+			await openSession(pid, projectPath);
 		} catch (error) {
 			console.error('Failed to open session:', error);
 		}
 	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key >= '1' && e.key <= '9' && !expandedId) {
+			const index = parseInt(e.key) - 1;
+			if (index < sessions.length) {
+				handleExpand(sessions[index]);
+			}
+		}
+		if (e.key === 'Tab' && !expandedId && attention > 0) {
+			e.preventDefault();
+			const attentionSessions = sessions.filter(
+				(s) => s.status === 'NeedsPermission' || s.status === 'WaitingForInput'
+			);
+			if (attentionSessions.length > 0) {
+				handleExpand(attentionSessions[0]);
+			}
+		}
+	}
 </script>
 
-<div class="app-container">
-	<!-- Left Panel: Session List -->
-	<aside class="sidebar">
-		<SessionList />
-	</aside>
+<svelte:window on:keydown={handleKeydown} />
 
-	<!-- Right Panel: Conversation and Input -->
-	<main class="main-panel">
-		<!-- Conversation Header -->
-		{#if selectedSession}
-			<div class="conversation-header">
-				<div class="project-info">
-					<h1 class="project-name">
-						{selectedSession.projectName}
-						{#if selectedSession.gitBranch}
-							<span class="git-branch">({selectedSession.gitBranch})</span>
-						{/if}
-					</h1>
-					<p class="project-path">{selectedSession.projectPath}</p>
+<div class="dashboard">
+	<DashboardHeader />
+
+	<main class="grid-container">
+		{#if sessions.length === 0}
+			<div class="empty-state">
+				<div class="empty-visual">
+					<div class="empty-orb">
+						<div class="orb-core"></div>
+						<div class="orb-ring ring-1"></div>
+						<div class="orb-ring ring-2"></div>
+						<div class="orb-ring ring-3"></div>
+					</div>
+				</div>
+				<div class="empty-content">
+					<h2>No Active Sessions</h2>
+					<p>Start a Claude Code session in your terminal or IDE</p>
+					<div class="empty-hint">
+						<span class="hint-icon">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="12" cy="12" r="10" />
+								<path d="M12 16v-4" />
+								<path d="M12 8h.01" />
+							</svg>
+						</span>
+						Sessions are detected automatically
+					</div>
 				</div>
 			</div>
+		{:else}
+			<div class="session-grid">
+				{#each sessions as session, index (session.id)}
+					<div class="grid-item" style="--item-index: {index}">
+						<SessionCard
+							{session}
+							onexpand={() => handleExpand(session)}
+							onapprove={() => handleApprove(session.id)}
+							onsend={(prompt) => handleSend(session.id, prompt)}
+							onstop={() => handleStop(session.pid)}
+							onopen={() => handleOpen(session.pid, session.projectPath)}
+						/>
+					</div>
+				{/each}
+			</div>
 		{/if}
-
-		<!-- Conversation View -->
-		<div class="conversation-container">
-			<ConversationView />
-		</div>
-
-		<!-- Bottom Action Bar -->
-		<div class="action-bar">
-			<div class="action-buttons">
-				<button
-					class="action-button stop-button"
-					onclick={handleStop}
-					disabled={!currentSessionId}
-					type="button"
-				>
-					<svg
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<rect x="6" y="6" width="12" height="12"></rect>
-					</svg>
-					Stop
-				</button>
-				<button
-					class="action-button open-button"
-					onclick={handleOpen}
-					disabled={!currentSessionId}
-					type="button"
-				>
-					<svg
-						width="16"
-						height="16"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-						<polyline points="15 3 21 3 21 9"></polyline>
-						<line x1="10" y1="14" x2="21" y2="3"></line>
-					</svg>
-					Open
-				</button>
-			</div>
-
-			<div class="prompt-container">
-				<PromptInput onsend={handleSendPrompt} />
-			</div>
-		</div>
 	</main>
+
+	{#if expandedSession}
+		<ExpandedCardOverlay
+			session={expandedSession}
+			{conversation}
+			onclose={handleClose}
+			onsend={(prompt) => handleSend(expandedSession.id, prompt)}
+			onstop={() => handleStop(expandedSession.pid)}
+			onopen={() => handleOpen(expandedSession.pid, expandedSession.projectPath)}
+			onapprove={() => handleApprove(expandedSession.id)}
+		/>
+	{/if}
+
+	{#if expandedId && attention > 0}
+		<button type="button" class="attention-float" onclick={handleClose}>
+			<span class="attention-pulse"></span>
+			<span class="attention-count">{attention}</span>
+			<span class="attention-text">
+				{attention === 1 ? 'session needs' : 'sessions need'} attention
+			</span>
+			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<polyline points="9 18 15 12 9 6" />
+			</svg>
+		</button>
+	{/if}
 </div>
 
 <style>
-	.app-container {
+	.dashboard {
 		display: flex;
+		flex-direction: column;
 		height: 100vh;
 		width: 100vw;
 		overflow: hidden;
-		background: #fafafa;
+		background: var(--bg-base);
 	}
 
-	.sidebar {
-		width: 300px;
-		min-width: 250px;
-		max-width: 400px;
-		border-right: 1px solid #e5e7eb;
-		background: #fafafa;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.main-panel {
+	.grid-container {
 		flex: 1;
+		overflow-y: auto;
+		padding: var(--space-xl);
+	}
+
+	.session-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+		grid-auto-rows: 1fr;
+		gap: var(--space-lg);
+		max-width: 1440px;
+		margin: 0 auto;
+	}
+
+	.grid-item {
+		display: flex;
+		animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+		animation-delay: calc(var(--item-index) * 60ms);
+	}
+
+	/* Empty State */
+	.empty-state {
 		display: flex;
 		flex-direction: column;
-		min-width: 0;
-		background: white;
+		align-items: center;
+		justify-content: center;
+		height: 70vh;
+		text-align: center;
+		gap: var(--space-2xl);
 	}
 
-	.conversation-header {
-		padding: 20px 24px;
-		border-bottom: 1px solid #e5e7eb;
-		background: white;
+	.empty-visual {
+		position: relative;
+		width: 120px;
+		height: 120px;
 	}
 
-	.project-info {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-	}
-
-	.project-name {
-		margin: 0;
-		font-size: 20px;
-		font-weight: 600;
-		color: #111827;
+	.empty-orb {
+		position: relative;
+		width: 100%;
+		height: 100%;
 		display: flex;
 		align-items: center;
-		gap: 8px;
+		justify-content: center;
 	}
 
-	.git-branch {
-		font-size: 14px;
-		font-weight: 500;
-		color: #6b7280;
+	.orb-core {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: var(--accent-blue);
+		box-shadow: 0 0 40px var(--status-working-glow);
+		animation: pulse-glow 3s ease-in-out infinite;
 	}
 
-	.project-path {
-		margin: 0;
+	.orb-ring {
+		position: absolute;
+		border-radius: 50%;
+		border: 1px solid var(--accent-blue);
+		opacity: 0.3;
+	}
+
+	.ring-1 {
+		inset: 20px;
+		animation: ring-pulse 3s ease-out infinite;
+	}
+
+	.ring-2 {
+		inset: 10px;
+		animation: ring-pulse 3s ease-out infinite;
+		animation-delay: 1s;
+	}
+
+	.ring-3 {
+		inset: 0;
+		animation: ring-pulse 3s ease-out infinite;
+		animation-delay: 2s;
+	}
+
+	.empty-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
+	}
+
+	.empty-content h2 {
+		font-size: 24px;
+		font-weight: 600;
+		color: var(--text-primary);
+		letter-spacing: -0.02em;
+	}
+
+	.empty-content p {
+		font-size: 15px;
+		color: var(--text-secondary);
+	}
+
+	.empty-hint {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-top: var(--space-md);
+		padding: var(--space-sm) var(--space-lg);
+		background: var(--bg-card);
+		border: 1px solid var(--border-default);
+		border-radius: var(--radius-lg);
 		font-size: 13px;
-		color: #6b7280;
-		font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New',
-			monospace;
+		color: var(--text-muted);
 	}
 
-	.conversation-container {
-		flex: 1;
-		min-height: 0;
+	.hint-icon {
+		display: flex;
+		color: var(--accent-blue);
+	}
+
+	/* Attention Float */
+	.attention-float {
+		position: fixed;
+		bottom: var(--space-xl);
+		right: var(--space-xl);
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-md) var(--space-lg);
+		background: linear-gradient(135deg, var(--status-permission), #ea580c);
+		color: white;
+		border-radius: var(--radius-xl);
+		font-size: 13px;
+		font-weight: 600;
+		box-shadow: 0 4px 24px var(--status-permission-glow), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+		z-index: 999;
+		animation: slide-up 0.3s ease;
+		transition: all var(--transition-fast);
 		overflow: hidden;
 	}
 
-	.action-bar {
-		display: flex;
-		gap: 16px;
-		padding: 0;
-		border-top: 1px solid #e5e7eb;
-		background: white;
+	.attention-float:hover {
+		transform: translateY(-2px) scale(1.02);
+		box-shadow: 0 8px 32px var(--status-permission-glow), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
 	}
 
-	.action-buttons {
-		display: flex;
-		gap: 8px;
-		padding: 16px 20px;
-		border-right: 1px solid #e5e7eb;
+	.attention-pulse {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+		animation: shimmer 2s ease-in-out infinite;
 	}
 
-	.action-button {
+	.attention-count {
+		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 6px;
-		padding: 8px 16px;
-		font-size: 14px;
-		font-weight: 500;
-		border: 1px solid #d1d5db;
-		border-radius: 6px;
-		background: white;
-		color: #374151;
-		cursor: pointer;
-		transition: all 0.2s;
+		justify-content: center;
+		min-width: 24px;
+		height: 24px;
+		padding: 0 6px;
+		background: rgba(0, 0, 0, 0.2);
+		border-radius: var(--radius-md);
+		font-family: var(--font-mono);
+		font-size: 12px;
 	}
 
-	.action-button:hover:not(:disabled) {
-		background: #f9fafb;
-		border-color: #9ca3af;
-	}
-
-	.action-button:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	.stop-button:hover:not(:disabled) {
-		background: #fee2e2;
-		border-color: #fca5a5;
-		color: #dc2626;
-	}
-
-	.open-button:hover:not(:disabled) {
-		background: #dbeafe;
-		border-color: #93c5fd;
-		color: #2563eb;
-	}
-
-	.prompt-container {
-		flex: 1;
-		min-width: 0;
+	.attention-text {
+		position: relative;
+		white-space: nowrap;
 	}
 </style>

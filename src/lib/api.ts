@@ -34,18 +34,19 @@ export async function sendPrompt(sessionId: string, prompt: string): Promise<voi
 
 /**
  * Stop a running session by sending SIGINT
- * @param sessionId - The session UUID
+ * @param pid - The process ID of the Claude session
  * @returns Promise resolving when the stop signal has been sent
  */
-export async function stopSession(sessionId: string): Promise<void> {
-  await invoke<void>('stop_session', { sessionId });
+export async function stopSession(pid: number): Promise<void> {
+  await invoke<void>('stop_session', { pid });
 }
 
 /**
  * Open the terminal or IDE window for a session
- * @param sessionId - The session UUID
+ * @param pid - The process ID of the Claude session
+ * @param projectPath - The project path for window matching
  * @returns Promise resolving when the window has been opened/focused
  */
-export async function openSession(sessionId: string): Promise<void> {
-  await invoke<void>('open_session', { sessionId });
+export async function openSession(pid: number, projectPath: string): Promise<void> {
+  await invoke<void>('open_session', { pid, projectPath });
 }
