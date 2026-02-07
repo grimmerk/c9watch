@@ -1,6 +1,6 @@
 /**
- * Claude Session Monitor - Refined Mission Control
- * A dark, atmospheric command center aesthetic
+ * Claude Session Monitor - Vercel Noir
+ * True black, sharp edges, high contrast hardware interface
  */
 
 /* Geist Font Family from Vercel */
@@ -61,42 +61,42 @@
 	font-display: swap;
 }
 
-/* CSS Variables */
+/* CSS Variables - Vercel Noir */
 :root {
-	/* Color Palette - Deep Space with Warmer Undertones */
-	--bg-base: #0a0e12;
-	--bg-elevated: #12171d;
-	--bg-card: #171d24;
-	--bg-card-hover: #1e2631;
-	--bg-overlay: rgba(10, 14, 18, 0.92);
+	/* Color Palette - True Black OLED */
+	--bg-base: #000000;
+	--bg-elevated: #0a0a0a;
+	--bg-card: #111111;
+	--bg-card-hover: #1a1a1a;
+	--bg-overlay: rgba(0, 0, 0, 0.95);
 
-	/* Text Colors - Higher Contrast */
-	--text-primary: #f0f4f8;
-	--text-secondary: #94a3b8;
-	--text-muted: #64748b;
+	/* Text Colors - High Contrast */
+	--text-primary: #ffffff;
+	--text-secondary: #888888;
+	--text-muted: #666666;
 
-	/* Status Colors - More Vibrant */
-	--status-working: #60a5fa;
-	--status-working-glow: rgba(96, 165, 250, 0.35);
-	--status-permission: #fb923c;
-	--status-permission-glow: rgba(251, 146, 60, 0.4);
-	--status-input: #4ade80;
-	--status-input-glow: rgba(74, 222, 128, 0.35);
-	--status-connecting: #94a3b8;
-	--status-connecting-glow: rgba(148, 163, 184, 0.2);
+	/* Status Colors - Sharp & Clear */
+	--status-working: #ffffff;
+	--status-working-glow: rgba(255, 255, 255, 0.15);
+	--status-permission: #ff6600;
+	--status-permission-glow: rgba(255, 102, 0, 0.25);
+	--status-input: #00ff88;
+	--status-input-glow: rgba(0, 255, 136, 0.2);
+	--status-connecting: #666666;
+	--status-connecting-glow: rgba(102, 102, 102, 0.15);
 
-	/* Accent Colors */
-	--accent-blue: #60a5fa;
-	--accent-green: #4ade80;
-	--accent-amber: #fb923c;
-	--accent-red: #f87171;
-	--accent-purple: #a78bfa;
+	/* Accent Colors - Minimal Palette */
+	--accent-blue: #0070f3;
+	--accent-green: #00ff88;
+	--accent-amber: #ff6600;
+	--accent-red: #ff4444;
+	--accent-purple: #7928ca;
 
-	/* Borders */
-	--border-default: #1e293b;
-	--border-muted: #1e293b;
-	--border-focus: #60a5fa;
-	--border-glow: rgba(96, 165, 250, 0.3);
+	/* Borders - Sharp & Thin */
+	--border-default: #333333;
+	--border-muted: #222222;
+	--border-focus: #ffffff;
+	--border-glow: rgba(255, 255, 255, 0.1);
 
 	/* Spacing */
 	--space-xs: 4px;
@@ -107,32 +107,33 @@
 	--space-2xl: 32px;
 	--space-3xl: 48px;
 
-	/* Radii */
-	--radius-sm: 6px;
-	--radius-md: 10px;
-	--radius-lg: 14px;
-	--radius-xl: 20px;
-	--radius-2xl: 24px;
+	/* Radii - Sharp Corners */
+	--radius-sm: 0;
+	--radius-md: 0;
+	--radius-lg: 0;
+	--radius-xl: 0;
+	--radius-2xl: 0;
 
-	/* Shadows */
-	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-	--shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-	--shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.4);
-	--shadow-overlay: 0 24px 64px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4);
-	--shadow-glow-blue: 0 0 32px var(--status-working-glow), 0 0 8px var(--status-working-glow);
-	--shadow-glow-amber: 0 0 32px var(--status-permission-glow), 0 0 8px var(--status-permission-glow);
-	--shadow-glow-green: 0 0 32px var(--status-input-glow), 0 0 8px var(--status-input-glow);
+	/* Shadows - Minimal */
+	--shadow-sm: none;
+	--shadow-card: none;
+	--shadow-card-hover: 0 0 0 1px var(--border-focus);
+	--shadow-overlay: 0 0 0 1px var(--border-default);
+	--shadow-glow-blue: 0 0 20px var(--status-working-glow);
+	--shadow-glow-amber: 0 0 20px var(--status-permission-glow);
+	--shadow-glow-green: 0 0 20px var(--status-input-glow);
 
 	/* Typography */
 	--font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
 	--font-mono: 'Geist Mono', 'SF Mono', Monaco, monospace;
 	--font-pixel: 'Geist Pixel Square', var(--font-mono);
+	--font-pixel-grid: 'Geist Pixel Grid', var(--font-mono);
 
 	/* Transitions */
-	--transition-fast: 120ms ease-out;
-	--transition-normal: 200ms ease-out;
-	--transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
-	--transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+	--transition-fast: 100ms linear;
+	--transition-normal: 150ms linear;
+	--transition-slow: 250ms linear;
+	--transition-spring: 200ms linear;
 }
 
 /* CSS Reset */
@@ -163,16 +164,6 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 }
 
-/* Subtle noise texture overlay */
-body::before {
-	content: '';
-	position: fixed;
-	inset: 0;
-	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-	opacity: 0.015;
-	pointer-events: none;
-	z-index: 10000;
-}
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
@@ -192,32 +183,28 @@ code, pre, kbd, samp {
 	font-size: 0.9em;
 }
 
-/* Scrollbars - Refined */
+/* Scrollbars - Sharp */
 ::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
+	width: 6px;
+	height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-	background: transparent;
+	background: var(--bg-base);
 }
 
 ::-webkit-scrollbar-thumb {
 	background: var(--border-default);
-	border-radius: 4px;
-	border: 2px solid transparent;
-	background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
 	background: var(--text-muted);
-	background-clip: content-box;
 }
 
 /* Selection */
 ::selection {
-	background-color: rgba(96, 165, 250, 0.3);
-	color: var(--text-primary);
+	background-color: var(--text-primary);
+	color: var(--bg-base);
 }
 
 /* Focus Styles */
@@ -226,8 +213,8 @@ input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 [role="button"]:focus-visible {
-	outline: 2px solid var(--border-focus);
-	outline-offset: 2px;
+	outline: 1px solid var(--border-focus);
+	outline-offset: 0;
 }
 
 /* Button Reset */
@@ -359,28 +346,8 @@ input, textarea, select {
 	border-width: 0;
 }
 
-/* Glass morphism utility */
-.glass {
-	background: rgba(23, 29, 36, 0.8);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
-}
-
-/* Gradient border utility */
-.gradient-border {
-	position: relative;
-}
-
-.gradient-border::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	border-radius: inherit;
-	padding: 1px;
-	background: linear-gradient(135deg, var(--border-default), transparent 50%);
-	-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-	mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-	-webkit-mask-composite: xor;
-	mask-composite: exclude;
-	pointer-events: none;
+/* Panel utility */
+.panel {
+	background: var(--bg-card);
+	border: 1px solid var(--border-default);
 }
