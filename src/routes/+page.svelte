@@ -165,7 +165,7 @@
 		{#if sessions.length === 0}
 			<div class="empty-state">
 				<div class="system-status-container" style="width: 100%; margin-bottom: var(--space-3xl);">
-					<StatusBar total={0} summary={{ working: 0, permission: 0, input: 0, connecting: 0 }} />
+					<StatusBar total={0} summary={{ working: 0, permission: 0, input: 0 }} />
 				</div>
 				<div class="empty-visual">
 					<div class="empty-orb">
@@ -219,7 +219,8 @@
 										<span class="status-count">{group.attention.length}</span>
 									</div>
 									<div class="session-grid">
-										{#each group.attention as session (session.id)}
+										{#each group.attention as session, i (session.id)}
+											<div class="card-wrapper" style="animation-delay: {i * 50}ms">
 											<SessionCard
 												{session}
 												onexpand={() => handleExpand(session)}
@@ -228,6 +229,7 @@
 												onstop={() => handleStop(session.pid)}
 												onopen={() => handleOpen(session.pid, session.projectPath)}
 											/>
+										</div>
 										{/each}
 									</div>
 								</div>
@@ -241,7 +243,8 @@
 										<span class="status-count">{group.idle.length}</span>
 									</div>
 									<div class="session-grid">
-										{#each group.idle as session (session.id)}
+										{#each group.idle as session, i (session.id)}
+											<div class="card-wrapper" style="animation-delay: {i * 50}ms">
 											<SessionCard
 												{session}
 												onexpand={() => handleExpand(session)}
@@ -250,6 +253,7 @@
 												onstop={() => handleStop(session.pid)}
 												onopen={() => handleOpen(session.pid, session.projectPath)}
 											/>
+										</div>
 										{/each}
 									</div>
 								</div>
@@ -263,7 +267,8 @@
 										<span class="status-count">{group.working.length}</span>
 									</div>
 									<div class="session-grid">
-										{#each group.working as session (session.id)}
+										{#each group.working as session, i (session.id)}
+											<div class="card-wrapper" style="animation-delay: {i * 50}ms">
 											<SessionCard
 												{session}
 												onexpand={() => handleExpand(session)}
@@ -272,6 +277,7 @@
 												onstop={() => handleStop(session.pid)}
 												onopen={() => handleOpen(session.pid, session.projectPath)}
 											/>
+										</div>
 										{/each}
 									</div>
 								</div>
@@ -285,7 +291,8 @@
 										<span class="status-count">{group.connecting.length}</span>
 									</div>
 									<div class="session-grid">
-										{#each group.connecting as session (session.id)}
+										{#each group.connecting as session, i (session.id)}
+											<div class="card-wrapper" style="animation-delay: {i * 50}ms">
 											<SessionCard
 												{session}
 												onexpand={() => handleExpand(session)}
@@ -294,6 +301,7 @@
 												onstop={() => handleStop(session.pid)}
 												onopen={() => handleOpen(session.pid, session.projectPath)}
 											/>
+										</div>
 										{/each}
 									</div>
 								</div>
@@ -530,5 +538,9 @@
 	.hint-icon {
 		display: flex;
 		color: var(--text-muted);
+	}
+
+	.card-wrapper {
+		animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 	}
 </style>

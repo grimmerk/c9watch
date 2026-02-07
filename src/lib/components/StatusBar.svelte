@@ -4,7 +4,6 @@
 			working: number;
 			permission: number;
 			input: number;
-			connecting: number;
 		};
 		total: number;
 	}
@@ -23,9 +22,9 @@
 	let totalBlocks = $derived(columns * 2);
 
 	let blocks = $derived.by(() => {
-		if (total === 0) return { working: 0, permission: 0, input: 0, connecting: 0 };
+		if (total === 0) return { working: 0, permission: 0, input: 0 };
 
-		const counts = [summary.working, summary.permission, summary.input, summary.connecting];
+		const counts = [summary.working, summary.permission, summary.input];
 		const percentages = counts.map((c) => (c / total) * totalBlocks);
 		const integerParts = percentages.map((p) => Math.floor(p));
 		const remainders = percentages.map((p, i) => p - integerParts[i]);
@@ -51,8 +50,7 @@
 		return {
 			working: result[0],
 			permission: result[1],
-			input: result[2],
-			connecting: result[3]
+			input: result[2]
 		};
 	});
 
@@ -61,7 +59,6 @@
 		for (let i = 0; i < blocks.working; i++) arr.push('working');
 		for (let i = 0; i < blocks.permission; i++) arr.push('permission');
 		for (let i = 0; i < blocks.input; i++) arr.push('input');
-		for (let i = 0; i < blocks.connecting; i++) arr.push('connecting');
 		while (arr.length < totalBlocks) arr.push('empty');
 		return arr;
 	});
@@ -103,11 +100,6 @@
 			<span class="label">WAITING</span>
 			<span class="count">{summary.input}</span>
 		</div>
-		<div class="legend-item" class:inactive={summary.connecting === 0}>
-			<span class="dot connecting"></span>
-			<span class="label">CONNECTING</span>
-			<span class="count">{summary.connecting}</span>
-		</div>
 	</div>
 
 	<div class="deco-mesh"></div>
@@ -128,6 +120,26 @@
 
 	.system-status-bar:hover {
 		border-color: var(--text-muted);
+	}
+
+	/* Scanline effect */
+	.system-status-bar::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(
+			to bottom,
+			transparent 50%,
+			rgba(0, 0, 0, 0.1) 51%,
+			transparent 52%
+		);
+		background-size: 100% 4px;
+		pointer-events: none;
+		z-index: 10;
+		opacity: 0.3;
 	}
 
 	.bar-header {
@@ -200,14 +212,13 @@
 		width: 100%;
 		height: 100%;
 		background: rgba(255, 255, 255, 0.06);
-		transition: background-color var(--transition-fast);
+		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 		border-radius: 1px;
 	}
 
-	.rect.working { background-color: var(--status-working); }
-	.rect.permission { background-color: var(--status-permission); }
-	.rect.input { background-color: var(--status-input); }
-	.rect.connecting { background-color: var(--status-connecting); }
+	.rect.working { background-color: var(--status-working); box-shadow: 0 0 4px var(--status-working-glow); }
+	.rect.permission { background-color: var(--status-permission); box-shadow: 0 0 4px var(--status-permission-glow); }
+	.rect.input { background-color: var(--status-input); box-shadow: 0 0 4px var(--status-input-glow); }
 
 	.legend {
 		display: flex;
@@ -233,7 +244,6 @@
 	.legend-item .dot.working { background: var(--status-working); }
 	.legend-item .dot.permission { background: var(--status-permission); }
 	.legend-item .dot.input { background: var(--status-input); }
-	.legend-item .dot.connecting { background: var(--status-connecting); }
 
 	.legend-item .label {
 		font-family: var(--font-mono);

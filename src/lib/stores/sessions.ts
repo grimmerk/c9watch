@@ -96,9 +96,8 @@ export const statusSummary = derived(sessions, ($sessions) => {
 	const working = $sessions.filter((s) => s.status === SessionStatus.Working).length;
 	const permission = $sessions.filter((s) => s.status === SessionStatus.NeedsPermission).length;
 	const input = $sessions.filter((s) => s.status === SessionStatus.WaitingForInput).length;
-	const connecting = $sessions.filter((s) => s.status === SessionStatus.Connecting).length;
 
-	return { working, permission, input, connecting };
+	return { working, permission, input };
 });
 
 /**
