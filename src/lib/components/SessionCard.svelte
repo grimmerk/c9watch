@@ -2,6 +2,7 @@
 	import type { Session } from '$lib/types';
 	import { SessionStatus } from '$lib/types';
 	import { getSessionUIState, updateSessionUIState } from '$lib/stores/sessions';
+	import { invoke } from '@tauri-apps/api/core';
 
 	interface Props {
 		session: Session;
@@ -33,6 +34,8 @@
 	let isWorking = $derived(session.status === SessionStatus.Working);
 
 	let menuOpen = $state(false);
+	let isEditingName = $state(false);
+	let tempName = $state(session.projectName);
 
 	function getStatusColor(): string {
 		switch (session.status) {
@@ -78,10 +81,6 @@
 		return `${diffDays}d`;
 	}
 
-	function truncateText(text: string, maxLength: number): string {
-		if (text.length <= maxLength) return text;
-		return text.substring(0, maxLength).trim() + '...';
-	}
 
 	function handleCardClick(e: MouseEvent) {
 		const target = e.target as HTMLElement;
@@ -89,7 +88,8 @@
 			target.closest('.action-button') ||
 			target.closest('.quick-input') ||
 			target.closest('.menu-trigger') ||
-			target.closest('.menu-dropdown')
+			target.closest('.menu-dropdown') ||
+			target.closest('.project-name-input')
 		) {
 			return;
 		}
@@ -142,6 +142,41 @@
 		menuOpen = false;
 		onopen?.();
 	}
+
+	async function saveName() {
+		if (tempName.trim() && tempName !== session.projectName) {
+			try {
+				await invoke('rename_session', { sessionId: session.id, newName: tempName.trim() });
+			} catch (err) {
+				console.error('Failed to rename session:', err);
+				tempName = session.projectName;
+			}
+		}
+		isEditingName = false;
+	}
+
+	function handleNameKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			saveName();
+		} else if (e.key === 'Escape') {
+			tempName = session.projectName;
+			isEditingName = false;
+		}
+	}
+
+	function startEditing(e: MouseEvent) {
+		e.stopPropagation();
+		tempName = session.projectName;
+		isEditingName = true;
+		menuOpen = false;
+	}
+
+	function autofocus(node: HTMLElement) {
+		node.focus();
+		if (node instanceof HTMLInputElement) {
+			node.select();
+		}
+	}
 </script>
 
 <div
@@ -159,51 +194,74 @@
 	<div class="card-body">
 		<!-- Header -->
 		<div class="card-header">
-			<div class="project-info">
-				<h3 class="project-name">{session.projectName}</h3>
-				{#if session.gitBranch}
-					<span class="git-branch">
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<line x1="6" y1="3" x2="6" y2="15" />
-							<circle cx="18" cy="6" r="3" />
-							<circle cx="6" cy="18" r="3" />
-							<path d="M18 9a9 9 0 0 1-9 9" />
-						</svg>
-						{session.gitBranch}
-					</span>
+			{#if isEditingName}
+				<input
+					type="text"
+					class="project-name-input"
+					bind:value={tempName}
+					onkeydown={handleNameKeydown}
+					onblur={saveName}
+					use:autofocus
+					onclick={(e) => e.stopPropagation()}
+				/>
+			{:else}
+				<h3 class="project-name" ondblclick={startEditing}>{session.projectName}</h3>
+			{/if}
+			<span class="message-count">
+				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+				</svg>
+				{session.messageCount}
+			</span>
+			<span class="time-badge">{formatTimeSince(session.modified)}</span>
+			<div class="menu-container">
+				<button type="button" class="menu-trigger" onclick={toggleMenu} aria-label="More actions">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="6" r="1.5" fill="currentColor" />
+						<circle cx="12" cy="12" r="1.5" fill="currentColor" />
+						<circle cx="12" cy="18" r="1.5" fill="currentColor" />
+					</svg>
+				</button>
+				{#if menuOpen}
+					<div class="menu-dropdown">
+						<button type="button" class="menu-item" onclick={startEditing}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+								<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+							</svg>
+							Rename
+						</button>
+						<button type="button" class="menu-item danger" onclick={handleStop}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<rect x="6" y="6" width="12" height="12" rx="1" />
+							</svg>
+							Stop
+						</button>
+						<button type="button" class="menu-item" onclick={handleOpen}>
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+								<polyline points="15 3 21 3 21 9" />
+								<line x1="10" y1="14" x2="21" y2="3" />
+							</svg>
+							Open
+						</button>
+					</div>
 				{/if}
 			</div>
-			<div class="header-actions">
-				<span class="time-badge">{formatTimeSince(session.modified)}</span>
-				<div class="menu-container">
-					<button type="button" class="menu-trigger" onclick={toggleMenu} aria-label="More actions">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<circle cx="12" cy="6" r="1.5" fill="currentColor" />
-							<circle cx="12" cy="12" r="1.5" fill="currentColor" />
-							<circle cx="12" cy="18" r="1.5" fill="currentColor" />
-						</svg>
-					</button>
-					{#if menuOpen}
-						<div class="menu-dropdown">
-							<button type="button" class="menu-item danger" onclick={handleStop}>
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<rect x="6" y="6" width="12" height="12" rx="1" />
-								</svg>
-								Stop
-							</button>
-							<button type="button" class="menu-item" onclick={handleOpen}>
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-									<polyline points="15 3 21 3 21 9" />
-									<line x1="10" y1="14" x2="21" y2="3" />
-								</svg>
-								Open
-							</button>
-						</div>
-					{/if}
-				</div>
-			</div>
 		</div>
+
+		<!-- Git Branch -->
+		{#if session.gitBranch}
+			<div class="git-branch">
+				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<line x1="6" y1="3" x2="6" y2="15" />
+					<circle cx="18" cy="6" r="3" />
+					<circle cx="6" cy="18" r="3" />
+					<path d="M18 9a9 9 0 0 1-9 9" />
+				</svg>
+				<span class="branch-name">{session.gitBranch}</span>
+			</div>
+		{/if}
 
 		<!-- Status Label -->
 		<div class="status-label" style="color: {getStatusColor()}">
@@ -211,17 +269,8 @@
 		</div>
 
 		<!-- Task Preview -->
-		<p class="task-preview">{truncateText(session.firstPrompt, 90)}</p>
-
-		<!-- Footer -->
-		<div class="card-footer">
-			<span class="message-count">
-				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-				</svg>
-				{session.messageCount}
-			</span>
-		</div>
+		<!-- Task Preview -->
+		<p class="task-preview">{session.firstPrompt}</p>
 
 		<!-- Action Area -->
 		{#if isPermission}
@@ -267,47 +316,19 @@
 		position: relative;
 		display: flex;
 		gap: var(--space-lg);
-		padding: var(--space-lg) var(--space-xl);
+		padding: var(--space-lg);
 		background: var(--bg-card);
 		border: 1px solid var(--border-default);
-		border-radius: var(--radius-lg);
 		cursor: pointer;
-		transition:
-			transform var(--transition-normal),
-			box-shadow var(--transition-normal),
-			border-color var(--transition-normal),
-			background var(--transition-fast);
+		transition: border-color var(--transition-fast);
 		text-align: left;
 		width: 100%;
-		height: 100%;
-		min-height: 0;
-	}
-
-	.session-card::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: inherit;
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, transparent 50%);
-		pointer-events: none;
+		height: 235px;
 	}
 
 	.session-card:hover {
-		background: var(--bg-card-hover);
 		border-color: var(--text-muted);
-		transform: translateY(-3px);
-		box-shadow: var(--shadow-card-hover);
 	}
-
-	.session-card.permission {
-		border-color: var(--status-permission);
-		box-shadow: var(--shadow-glow-amber);
-	}
-
-	.session-card.permission:hover {
-		box-shadow: var(--shadow-glow-amber), var(--shadow-card-hover);
-	}
-
 
 	/* Card Body */
 	.card-body {
@@ -320,67 +341,85 @@
 
 	.card-header {
 		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
+		align-items: center;
 		gap: var(--space-sm);
-	}
-
-	.project-info {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		min-width: 0;
 	}
 
 	.project-name {
 		font-family: var(--font-pixel);
-		font-size: 15px;
+		font-size: 14px;
 		font-weight: 500;
 		color: var(--text-primary);
 		margin: 0;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
-		letter-spacing: 0.02em;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.project-name-input {
+		font-family: var(--font-pixel);
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--text-primary);
+		background: var(--bg-base);
+		border: 1px solid var(--status-input);
+		padding: 2px 4px;
+		margin: -3px -5px;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		flex: 1;
+		min-width: 0;
+		outline: none;
 	}
 
 	.git-branch {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
 		gap: 4px;
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 10px;
 		color: var(--text-muted);
+		text-transform: lowercase;
+		min-width: 0;
 	}
 
-	.header-actions {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
+	.git-branch svg {
 		flex-shrink: 0;
+	}
+
+	.branch-name {
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		min-width: 0;
+		max-width: 200px;
 	}
 
 	.time-badge {
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 10px;
 		font-weight: 500;
 		color: var(--text-muted);
-		background: var(--bg-elevated);
-		padding: 2px 8px;
-		border-radius: var(--radius-sm);
-	}
-
-	/* Status Label */
-	.status-label {
-		font-size: 11px;
-		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
 
+	/* Status Label */
+	.status-label {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+	}
+
 	/* Task Preview */
 	.task-preview {
-		font-size: 13px;
+		font-size: 12px;
 		color: var(--text-secondary);
 		line-height: 1.5;
 		display: -webkit-box;
@@ -390,22 +429,15 @@
 		margin: var(--space-xs) 0;
 	}
 
-	/* Footer */
-	.card-footer {
-		display: flex;
-		align-items: center;
-		gap: var(--space-md);
-		margin-top: auto;
-		padding-top: var(--space-sm);
-	}
-
 	.message-count {
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 10px;
 		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 
 	/* Menu */
@@ -417,15 +449,13 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 28px;
-		height: 28px;
-		border-radius: var(--radius-sm);
+		width: 24px;
+		height: 24px;
 		color: var(--text-muted);
-		transition: all var(--transition-fast);
+		transition: color var(--transition-fast);
 	}
 
 	.menu-trigger:hover {
-		background: var(--bg-elevated);
 		color: var(--text-primary);
 	}
 
@@ -434,15 +464,11 @@
 		top: 100%;
 		right: 0;
 		margin-top: 4px;
-		background: var(--bg-elevated);
+		background: var(--bg-card);
 		border: 1px solid var(--border-default);
-		border-radius: var(--radius-md);
-		box-shadow: var(--shadow-overlay);
 		z-index: 100;
 		min-width: 100px;
 		padding: var(--space-xs);
-		animation: scale-in 0.15s ease;
-		transform-origin: top right;
 	}
 
 	.menu-item {
@@ -451,26 +477,25 @@
 		gap: var(--space-sm);
 		width: 100%;
 		padding: var(--space-sm) var(--space-md);
-		font-size: 13px;
+		font-family: var(--font-mono);
+		font-size: 11px;
 		font-weight: 500;
 		color: var(--text-secondary);
-		border-radius: var(--radius-sm);
-		transition: all var(--transition-fast);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		transition: color var(--transition-fast);
 	}
 
 	.menu-item:hover {
-		background: var(--bg-card-hover);
 		color: var(--text-primary);
 	}
 
 	.menu-item.danger:hover {
-		background: rgba(248, 113, 113, 0.1);
 		color: var(--accent-red);
 	}
 
-	/* Action Area */
 	.action-area {
-		margin-top: var(--space-md);
+		margin-top: auto;
 		padding-top: var(--space-md);
 		border-top: 1px solid var(--border-muted);
 	}
@@ -480,20 +505,24 @@
 		align-items: center;
 		gap: var(--space-sm);
 		padding: var(--space-sm) var(--space-lg);
-		font-size: 13px;
-		font-weight: 600;
-		border-radius: var(--radius-md);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		border: 1px solid transparent;
 		transition: all var(--transition-fast);
 	}
 
 	.approve-button {
 		background: var(--status-permission);
-		color: #1a1a1a;
+		color: var(--bg-base);
+		border-color: var(--status-permission);
 	}
 
 	.approve-button:hover {
-		filter: brightness(1.1);
-		transform: translateY(-1px);
+		background: transparent;
+		color: var(--status-permission);
 	}
 
 	/* Quick Input */
@@ -505,18 +534,17 @@
 	.quick-input {
 		flex: 1;
 		padding: var(--space-sm) var(--space-md);
-		background: var(--bg-elevated);
+		background: var(--bg-base);
 		border: 1px solid var(--border-default);
-		border-radius: var(--radius-md);
 		color: var(--text-primary);
-		font-size: 13px;
-		transition: all var(--transition-fast);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		transition: border-color var(--transition-fast);
 	}
 
 	.quick-input:focus {
 		outline: none;
 		border-color: var(--status-input);
-		box-shadow: 0 0 0 3px var(--status-input-glow);
 	}
 
 	.quick-input::placeholder {
@@ -527,21 +555,21 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 36px;
-		height: 36px;
+		width: 32px;
+		height: 32px;
 		background: var(--status-input);
-		color: #1a1a1a;
-		border-radius: var(--radius-md);
+		color: var(--bg-base);
+		border: 1px solid var(--status-input);
 		transition: all var(--transition-fast);
 	}
 
 	.send-button:hover:not(:disabled) {
-		filter: brightness(1.1);
-		transform: translateY(-1px);
+		background: transparent;
+		color: var(--status-input);
 	}
 
 	.send-button:disabled {
-		opacity: 0.4;
+		opacity: 0.3;
 		cursor: not-allowed;
 	}
 </style>
