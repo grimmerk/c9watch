@@ -20,18 +20,18 @@ cask "c9watch" do
   version "0.1.0"
 
   on_arm do
-    url "https://github.com/anthropics/c9watch/releases/download/v#{version}/c9watch_v#{version}_aarch64.app.tar.gz"
+    url "https://github.com/minchenlee/c9watch/releases/download/v#{version}/c9watch_v#{version}_aarch64.app.tar.gz"
     sha256 "REPLACE_WITH_AARCH64_SHA256"
   end
 
   on_intel do
-    url "https://github.com/anthropics/c9watch/releases/download/v#{version}/c9watch_v#{version}_x86_64.app.tar.gz"
+    url "https://github.com/minchenlee/c9watch/releases/download/v#{version}/c9watch_v#{version}_x86_64.app.tar.gz"
     sha256 "REPLACE_WITH_X86_64_SHA256"
   end
 
   name "c9watch"
   desc "Monitor and control all your Claude Code sessions from one place"
-  homepage "https://github.com/anthropics/c9watch"
+  homepage "https://github.com/minchenlee/c9watch"
 
   app "c9watch.app"
 

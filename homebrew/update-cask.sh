@@ -12,7 +12,7 @@
 set -euo pipefail
 
 VERSION="${1:?Usage: $0 <version-tag>}"
-REPO="${GITHUB_REPOSITORY:-anthropics/c9watch}"
+REPO="${GITHUB_REPOSITORY:-minchenlee/c9watch}"
 CASK_FILE="homebrew/c9watch.rb"
 
 echo "Downloading release artifacts for ${VERSION}..."

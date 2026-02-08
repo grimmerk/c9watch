@@ -28,23 +28,29 @@ Just open c9watch and see everything.
 
 ## Install
 
-### Homebrew (recommended)
+### Quick install
 
 ```bash
-brew tap <your-username>/tap
+curl -fsSL https://raw.githubusercontent.com/minchenlee/c9watch/main/install.sh | bash
+```
+
+### Homebrew
+
+```bash
+brew tap minchenlee/tap
 brew install --cask c9watch
 ```
 
 ### Download
 
-Grab the latest `.dmg` from the [Releases](https://github.com/anthropics/c9watch/releases) page.
+Grab the latest `.dmg` from the [Releases](https://github.com/minchenlee/c9watch/releases) page.
 
 ### Build from source
 
 Prerequisites: [Rust](https://rustup.rs/), [Node.js](https://nodejs.org/) (v18+), and the [Tauri CLI](https://v2.tauri.app/start/prerequisites/).
 
 ```bash
-git clone https://github.com/anthropics/c9watch.git
+git clone https://github.com/minchenlee/c9watch.git
 cd c9watch
 npm install
 npm run tauri build

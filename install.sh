@@ -3,7 +3,7 @@
 # c9watch installer
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/anthropics/c9watch/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/minchenlee/c9watch/main/install.sh | bash
 #
 # This script:
 #   1. Detects your Mac's architecture (Apple Silicon or Intel)
@@ -12,7 +12,7 @@
 #
 set -euo pipefail
 
-REPO="anthropics/c9watch"
+REPO="minchenlee/c9watch"
 APP_NAME="c9watch"
 INSTALL_DIR="/Applications"
 
