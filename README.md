@@ -12,6 +12,10 @@ Start Claude Code from anywhere you already work -- **VS Code**, **Zed**, **Anti
 
 Just open c9watch and see everything.
 
+## Lightweight and fast.
+
+Built with **Tauri**, **Rust**, and **Svelte** -- not Electron. The app binary is small, memory usage is minimal, and the UI stays snappy. Rust handles process scanning and file parsing at native speed. Svelte compiles away the framework overhead. You're already running multiple Claude Code agents eating up resources -- your monitoring tool shouldn't add to the pile.
+
 ## Features
 
 - **Zero-integration setup** -- Works with any terminal or IDE, no plugins or extensions required
