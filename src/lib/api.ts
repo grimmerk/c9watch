@@ -3,13 +3,19 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
+import { get } from 'svelte/store';
 import type { Session, Conversation } from './types';
+import { isDemoMode } from './demo';
+import { getDemoSessions, demoConversations } from './demo/data';
 
 /**
  * Get all active Claude Code sessions
  * @returns Promise resolving to array of sessions
  */
 export async function getSessions(): Promise<Session[]> {
+  if (get(isDemoMode)) {
+    return getDemoSessions();
+  }
   return await invoke<Session[]>('get_sessions');
 }
 
@@ -19,25 +25,19 @@ export async function getSessions(): Promise<Session[]> {
  * @returns Promise resolving to the conversation
  */
 export async function getConversation(sessionId: string): Promise<Conversation> {
+  if (get(isDemoMode)) {
+    return demoConversations[sessionId] ?? { sessionId, messages: [] };
+  }
   return await invoke<Conversation>('get_conversation', { sessionId });
 }
 
 /**
- * Send a prompt to a specific session
- * @param sessionId - The session UUID
- * @param prompt - The prompt text to send
- * @returns Promise resolving when the prompt has been sent
- */
-export async function sendPrompt(sessionId: string, prompt: string): Promise<void> {
-  await invoke<void>('send_prompt', { sessionId, prompt });
-}
-
-/**
- * Stop a running session by sending SIGINT
+ * Stop a running session by sending SIGTERM
  * @param pid - The process ID of the Claude session
  * @returns Promise resolving when the stop signal has been sent
  */
 export async function stopSession(pid: number): Promise<void> {
+  if (get(isDemoMode)) return;
   await invoke<void>('stop_session', { pid });
 }
 
@@ -48,15 +48,7 @@ export async function stopSession(pid: number): Promise<void> {
  * @returns Promise resolving when the window has been opened/focused
  */
 export async function openSession(pid: number, projectPath: string): Promise<void> {
+  if (get(isDemoMode)) return;
   await invoke<void>('open_session', { pid, projectPath });
 }
 
-/**
- * Approve a permission request by sending 'y' + Enter to the terminal
- * @param pid - The process ID of the Claude session
- * @param projectPath - The project path for window matching
- * @returns Promise resolving when the approval has been sent
- */
-export async function approveSession(pid: number, projectPath: string): Promise<void> {
-  await invoke<void>('approve_session', { pid, projectPath });
-}
