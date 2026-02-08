@@ -122,6 +122,7 @@
 		max-width: 100%;
 		border-left: 1px solid var(--border-default);
 		transition: background var(--transition-fast);
+		animation: fade-in 0.3s ease-out backwards;
 	}
 
 	.message-bubble:hover {
@@ -163,14 +164,14 @@
 
 	.message-icon {
 		font-family: var(--font-mono);
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 	}
 
 	.message-role {
 		font-family: var(--font-mono);
 		font-weight: 500;
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
@@ -190,7 +191,7 @@
 
 	.message-time {
 		margin-left: auto;
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		font-family: var(--font-mono);
 		letter-spacing: 0.05em;
@@ -198,7 +199,7 @@
 
 	.message-content {
 		color: var(--text-secondary);
-		font-size: 13px;
+		font-size: 15px;
 		line-height: 1.6;
 		white-space: normal;
 		word-wrap: break-word;
@@ -222,10 +223,10 @@
 		line-height: 1.2;
 	}
 
-	.message-content :global(h1) { font-size: 16px; }
-	.message-content :global(h2) { font-size: 15px; }
-	.message-content :global(h3) { font-size: 14px; }
-	.message-content :global(h4) { font-size: 13px; }
+	.message-content :global(h1) { font-size: 18px; }
+	.message-content :global(h2) { font-size: 17px; }
+	.message-content :global(h3) { font-size: 16px; }
+	.message-content :global(h4) { font-size: 15px; }
 
 	.message-content :global(.code-block-wrapper) {
 		margin: var(--space-md) 0;
@@ -244,7 +245,7 @@
 
 	.message-content :global(.code-lang) {
 		font-family: var(--font-mono);
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
@@ -270,7 +271,7 @@
 
 	.message-content :global(code) {
 		font-family: var(--font-mono);
-		font-size: 12px;
+		font-size: 14px;
 		background: var(--bg-elevated);
 		padding: 2px 4px;
 		color: var(--text-primary);
@@ -298,7 +299,7 @@
 	.message-content :global(li::marker) {
 		color: var(--text-muted);
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 13px;
 	}
 
 	.message-content :global(blockquote) {
@@ -350,7 +351,7 @@
 		overflow-y: auto;
 		white-space: pre-wrap;
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 13px;
 		background: var(--bg-elevated);
 		padding: var(--space-sm);
 		border: 1px solid var(--border-muted);

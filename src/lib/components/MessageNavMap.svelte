@@ -4,9 +4,11 @@
 	interface Props {
 		conversation: Conversation | null;
 		scrollContainer: HTMLDivElement | null;
+		showTools?: boolean;
+		showThinking?: boolean;
 	}
 
-	let { conversation, scrollContainer }: Props = $props();
+	let { conversation, scrollContainer, showTools = $bindable(true), showThinking = $bindable(true) }: Props = $props();
 
 	// Filter for "milestone" messages - user messages, tool blocks, and thinking steps
 	let items = $derived.by(() => {
@@ -15,8 +17,8 @@
 			.map((msg, index) => ({ msg, index }))
 			.filter(({ msg }) => 
 				msg.messageType === 'User' || 
-				msg.messageType === 'Thinking' || 
-				(msg.messageType === 'ToolUse' && msg.content?.length > 0)
+				(showThinking && msg.messageType === 'Thinking') || 
+				(showTools && msg.messageType === 'ToolUse' && msg.content?.length > 0)
 			);
 	});
 
@@ -93,15 +95,14 @@
 	.nav-map-floating {
 		width: 240px;
 		height: fit-content;
-		max-height: 70vh;
+		max-height: 100%;
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-md);
-		padding: var(--space-lg);
+		padding: var(--space-lg) 0;
 		background: var(--bg-card);
 		border: 1px solid var(--border-default);
 		pointer-events: auto;
-		animation: slide-in-right 0.3s ease-out;
 	}
 
 	.nav-map-floating.hidden {
@@ -114,11 +115,12 @@
 		justify-content: space-between;
 		padding-bottom: var(--space-sm);
 		border-bottom: 1px solid var(--border-muted);
+		margin: 0 var(--space-lg);
 	}
 
 	.nav-title {
 		font-family: var(--font-pixel);
-		font-size: 10px;
+		font-size: 12px;
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
 		color: var(--text-muted);
@@ -126,7 +128,7 @@
 
 	.nav-count {
 		font-family: var(--font-mono);
-		font-size: 9px;
+		font-size: 11px;
 		color: var(--text-muted);
 		opacity: 0.5;
 	}
@@ -136,7 +138,7 @@
 		flex-direction: column;
 		gap: 2px;
 		overflow-y: auto;
-		padding-right: 4px;
+		padding-right: 0;
 	}
 
 	.nav-item-descriptive {
@@ -144,7 +146,7 @@
 		display: flex;
 		align-items: flex-start;
 		gap: var(--space-sm);
-		padding: 6px 8px;
+		padding: 6px var(--space-lg);
 		cursor: pointer;
 		transition: all var(--transition-fast);
 		border: 1px solid transparent;
@@ -157,7 +159,7 @@
 
 	.nav-icon {
 		font-family: var(--font-mono);
-		font-size: 10px;
+		font-size: 12px;
 		color: var(--item-color);
 		flex-shrink: 0;
 		margin-top: 1px;
@@ -165,7 +167,7 @@
 
 	.nav-text {
 		font-family: var(--font-mono);
-		font-size: 11px;
+		font-size: 13px;
 		color: var(--text-secondary);
 		line-height: 1.4;
 		word-break: break-all;
@@ -196,17 +198,14 @@
 
 	.is-thinking {
 		opacity: 0.8;
-		padding-left: calc(var(--space-sm) + 8px);
+		padding-left: calc(var(--space-lg) + var(--space-sm));
 	}
 
 	.is-thinking .nav-text {
 		font-style: italic;
 	}
 
-	@keyframes slide-in-right {
-		from { opacity: 0; transform: translateX(20px); }
-		to { opacity: 1; transform: translateX(0); }
-	}
+
 
 	/* Scrollbar for nav list */
 	.nav-list::-webkit-scrollbar {

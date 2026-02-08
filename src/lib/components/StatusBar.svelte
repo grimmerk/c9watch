@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
+
 	interface Props {
 		summary: {
 			working: number;
@@ -11,15 +13,36 @@
 	let { summary, total }: Props = $props();
 
 	let trackWidth = $state(0);
+	let isSweeping = $state(false);
+	let prevSummaryKey = $state('');
+
+	// Create a key from the summary to detect changes
+	let summaryKey = $derived(`${summary.working}-${summary.permission}-${summary.input}`);
+
+	// Detect changes and trigger sweep animation
+	$effect(() => {
+		const currentKey = summaryKey;
+		const previousKey = untrack(() => prevSummaryKey);
+		
+		if (previousKey !== '' && currentKey !== previousKey) {
+			// Status changed, trigger sweep
+			isSweeping = true;
+			setTimeout(() => {
+				isSweeping = false;
+			}, 6000); // 6s duration to cover ripple delay across all blocks
+		}
+		prevSummaryKey = currentKey;
+	});
 
 	// Calculate blocks to maintain square aspect ratio
-	// Height = 28px - 2px(border) - 6px(padding) = 20px
-	// 2 rows with 3px gap => (20 - 3) / 2 = 8.5px per block
-	// Block width needs to be 8.5px to be square
-	// Gap is 3px
-	// Stride is 11.5px
-	let columns = $derived(Math.max(1, Math.floor((trackWidth - 6) / 11.5)));
-	let totalBlocks = $derived(columns * 2);
+	// Height = 16px - 2px(border) - 6px(padding) = 8px
+	// Square blocks
+	// Height = 8px
+	// Block width = 8px
+	// Gap = 2px
+	// Stride = 10px
+	let columns = $derived(Math.max(1, Math.floor((trackWidth - 6) / 10)));
+	let totalBlocks = $derived(columns);
 
 	let blocks = $derived.by(() => {
 		if (total === 0) return { working: 0, permission: 0, input: 0 };
@@ -65,21 +88,11 @@
 </script>
 
 <div class="system-status-bar">
-	<div class="bar-header">
-		<div class="pulse-indicator">
-			<div class="dot"></div>
-			<span class="label">SYSTEM_PULSE</span>
-		</div>
-		<div class="total-units">
-			<span class="value">{total}</span>
-			<span class="unit">ACTIVE_THREADS</span>
-		</div>
-	</div>
 
 	<div class="progress-track" class:empty={total === 0} bind:clientWidth={trackWidth}>
 		<div class="grid-container" style="grid-template-columns: repeat({columns}, 1fr);">
-			{#each statusArray as status}
-				<div class="rect {status}"></div>
+			{#each statusArray as status, i}
+				<div class="rect {status}" class:sweeping={isSweeping} style="animation-delay: {i * 10}ms; transition-delay: {i * 25}ms"></div>
 			{/each}
 		</div>
 	</div>
@@ -142,54 +155,9 @@
 		opacity: 0.3;
 	}
 
-	.bar-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-	}
-
-	.pulse-indicator {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
-	}
-
-	.pulse-indicator .dot {
-		width: 4px;
-		height: 4px;
-		background: var(--text-primary);
-		animation: pulse-glow 2s linear infinite;
-	}
-
-	.pulse-indicator .label {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		color: var(--text-muted);
-		letter-spacing: 0.2em;
-	}
-
-	.total-units {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-sm);
-	}
-
-	.total-units .value {
-		font-family: var(--font-pixel-grid);
-		font-size: 24px;
-		color: var(--text-primary);
-		line-height: 1;
-	}
-
-	.total-units .unit {
-		font-family: var(--font-mono);
-		font-size: 9px;
-		color: var(--text-muted);
-		letter-spacing: 0.1em;
-	}
 
 	.progress-track {
-		height: 28px;
+		height: 16px;
 		background: var(--bg-surface);
 		border: 1px solid var(--border-default);
 		position: relative;
@@ -203,22 +171,37 @@
 
 	.grid-container {
 		display: grid;
-		grid-template-rows: repeat(2, 1fr);
-		gap: 3px;
+		grid-template-rows: 1fr;
+		gap: 2px;
 		height: 100%;
 	}
+
+
 
 	.rect {
 		width: 100%;
 		height: 100%;
-		background: rgba(255, 255, 255, 0.06);
-		transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+		background: rgba(255, 255, 255, 0.05); /* Slightly darker base */
 		border-radius: 1px;
+		opacity: 1; /* Normal visibility by default */
+		transition: background-color 0.4s, box-shadow 0.4s;
 	}
 
-	.rect.working { background-color: var(--status-working); box-shadow: 0 0 4px var(--status-working-glow); }
-	.rect.permission { background-color: var(--status-permission); box-shadow: 0 0 4px var(--status-permission-glow); }
-	.rect.input { background-color: var(--status-input); box-shadow: 0 0 4px var(--status-input-glow); }
+	/* Sweep animation only plays on status change */
+	.rect.sweeping {
+		animation: monitor-sweep 2s ease-out forwards;
+	}
+
+	@keyframes monitor-sweep {
+		0% { transform: scale(1); filter: brightness(1); }
+		20% { transform: scale(0.95); filter: brightness(1.1); }
+		40% { transform: scale(1.1); filter: brightness(1.4) drop-shadow(0 0 2px currentColor); }
+		100% { transform: scale(1); filter: brightness(1); }
+	}
+
+	.rect.working { background-color: var(--status-working); color: var(--status-working); box-shadow: 0 0 4px var(--status-working-glow); }
+	.rect.permission { background-color: var(--status-permission); color: var(--status-permission); box-shadow: 0 0 4px var(--status-permission-glow); }
+	.rect.input { background-color: var(--status-input); color: var(--status-input); box-shadow: 0 0 4px var(--status-input-glow); }
 
 	.legend {
 		display: flex;
@@ -247,14 +230,14 @@
 
 	.legend-item .label {
 		font-family: var(--font-mono);
-		font-size: 12px;
+		font-size: 14px;
 		color: var(--text-secondary);
 		letter-spacing: 0.1em;
 	}
 
 	.legend-item .count {
 		font-family: var(--font-pixel);
-		font-size: 14px;
+		font-size: 16px;
 		color: var(--text-primary);
 	}
 
@@ -271,8 +254,4 @@
 		background-size: 4px 4px;
 	}
 
-	@keyframes pulse-glow {
-		0%, 100% { opacity: 0.3; }
-		50% { opacity: 1; }
-	}
 </style>

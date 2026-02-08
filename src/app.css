@@ -76,8 +76,8 @@
 	--text-muted: #666666;
 
 	/* Status Colors - Sharp & Clear */
-	--status-working: #ffffff;
-	--status-working-glow: rgba(255, 255, 255, 0.15);
+	--status-working: #7928ca;
+	--status-working-glow: rgba(121, 40, 202, 0.25);
 	--status-permission: #ff6600;
 	--status-permission-glow: rgba(255, 102, 0, 0.25);
 	--status-input: #00ff88;
@@ -183,22 +183,14 @@ code, pre, kbd, samp {
 	font-size: 0.9em;
 }
 
-/* Scrollbars - Sharp */
+/* Scrollbars - Hidden for immersive feel */
 ::-webkit-scrollbar {
-	width: 6px;
-	height: 6px;
+	display: none;
 }
 
-::-webkit-scrollbar-track {
-	background: var(--bg-base);
-}
-
-::-webkit-scrollbar-thumb {
-	background: var(--border-default);
-}
-
-::-webkit-scrollbar-thumb:hover {
-	background: var(--text-muted);
+* {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 }
 
 /* Selection */
