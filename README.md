@@ -8,7 +8,7 @@
 
 Unlike other Claude Code management tools that require you to launch sessions from within their app, **c9watch doesn't care where you start your sessions**. It discovers them automatically by scanning running processes at the OS level.
 
-Start Claude Code from anywhere you already work -- **VS Code**, **Zed**, **Antigravity**, **iTerm2**, **Terminal.app**, or any other terminal -- and c9watch picks them all up. No plugins to install. No workflows to change. No vendor lock-in.
+Start Claude Code from any terminal or IDE you already use -- VS Code, Zed, iTerm2, Antigravity, you name it -- and c9watch picks them all up. No plugins to install. No workflows to change. No vendor lock-in.
 
 Just open c9watch and see everything.
 
@@ -16,15 +16,30 @@ Just open c9watch and see everything.
 
 Built with **Tauri**, **Rust**, and **Svelte** -- not Electron. The app binary is small, memory usage is minimal, and the UI stays snappy. Rust handles process scanning and file parsing at native speed. Svelte compiles away the framework overhead. You're already running multiple Claude Code agents eating up resources -- your monitoring tool shouldn't add to the pile.
 
-## Features
+## Install
 
-- **Zero-integration setup** -- Works with any terminal or IDE, no plugins or extensions required
-- **Auto-discovery** -- Detects all running Claude Code sessions by scanning processes at the OS level
-- **Real-time status** -- See at a glance which sessions are Working, Need Permission, or Idle
-- **Conversation viewer** -- Expand any session to view the full conversation with formatted markdown and code blocks
-- **Session control** -- Stop sessions, open their parent terminal/IDE, or rename them for easier tracking
-- **Multi-project view** -- Sessions grouped by project with git branch info
-- **Menu bar integration** -- Quick access from the macOS tray icon
+### Quick install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/minchenlee/c9watch/main/install.sh | bash
+```
+
+### Download
+
+Grab the latest `.dmg` from the [Releases](https://github.com/minchenlee/c9watch/releases) page.
+
+### Build from source
+
+Prerequisites: [Rust](https://rustup.rs/), [Node.js](https://nodejs.org/) (v18+), and the [Tauri CLI](https://v2.tauri.app/start/prerequisites/).
+
+```bash
+git clone https://github.com/minchenlee/c9watch.git
+cd c9watch
+npm install
+npm run tauri build
+```
+
+The built `.app` will be in `src-tauri/target/release/bundle/macos/`.
 
 ## Screenshots
 
@@ -52,30 +67,36 @@ Expand any card to see the full conversation history with formatted code, tool u
 
 ![Conversation viewer](docs/screenshots/conversation-view.png)
 
-## Install
+## Features
 
-### Quick install
+- **Zero-integration setup** -- Works with any terminal or IDE, no plugins or extensions required
+- **Auto-discovery** -- Detects all running Claude Code sessions by scanning processes at the OS level
+- **Real-time status** -- See at a glance which sessions are Working, Need Permission, or Idle
+- **Conversation viewer** -- Expand any session to view the full conversation with formatted markdown and code blocks
+- **Session control** -- Stop sessions, open their parent terminal/IDE, or rename them for easier tracking
+- **Multi-project view** -- Sessions grouped by project with git branch info
+- **Menu bar integration** -- Quick access from the macOS tray icon
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/minchenlee/c9watch/main/install.sh | bash
-```
+## How it works
 
-### Download
+1. A background thread polls every 2 seconds, scanning for running `claude` processes using `sysinfo`
+2. Each process is matched to its session file in `~/.claude/projects/` via path encoding and timestamp correlation
+3. The last N entries of each session's JSONL file are parsed to determine status:
+   - **Working** -- Claude is generating a response or executing tools
+   - **Needs Permission** -- A tool is pending that requires user approval
+   - **Idle** -- Session is waiting for your next prompt
+4. Status updates are pushed to the Svelte frontend via Tauri events
+5. The UI reactively updates, sorting sessions by priority (permission requests surface first)
 
-Grab the latest `.dmg` from the [Releases](https://github.com/minchenlee/c9watch/releases) page.
+## Tech stack
 
-### Build from source
-
-Prerequisites: [Rust](https://rustup.rs/), [Node.js](https://nodejs.org/) (v18+), and the [Tauri CLI](https://v2.tauri.app/start/prerequisites/).
-
-```bash
-git clone https://github.com/minchenlee/c9watch.git
-cd c9watch
-npm install
-npm run tauri build
-```
-
-The built `.app` will be in `src-tauri/target/release/bundle/macos/`.
+| Layer | Technology |
+|-------|-----------|
+| Desktop framework | [Tauri 2](https://v2.tauri.app/) |
+| Frontend | [SvelteKit](https://svelte.dev/) + [Svelte 5](https://svelte.dev/docs/svelte/overview) |
+| Backend | Rust |
+| Process discovery | [sysinfo](https://crates.io/crates/sysinfo) |
+| Design system | Vercel Noir (true black, [Geist](https://vercel.com/font) fonts) |
 
 ## Development
 
@@ -110,27 +131,6 @@ c9watch/
 │           ├── parser.rs   # JSONL file parsing
 │           └── permissions.rs # Auto-approval rule checking
 ```
-
-## How it works
-
-1. A background thread polls every 2 seconds, scanning for running `claude` processes using `sysinfo`
-2. Each process is matched to its session file in `~/.claude/projects/` via path encoding and timestamp correlation
-3. The last N entries of each session's JSONL file are parsed to determine status:
-   - **Working** -- Claude is generating a response or executing tools
-   - **Needs Permission** -- A tool is pending that requires user approval
-   - **Idle** -- Session is waiting for your next prompt
-4. Status updates are pushed to the Svelte frontend via Tauri events
-5. The UI reactively updates, sorting sessions by priority (permission requests surface first)
-
-## Tech stack
-
-| Layer | Technology |
-|-------|-----------|
-| Desktop framework | [Tauri 2](https://v2.tauri.app/) |
-| Frontend | [SvelteKit](https://svelte.dev/) + [Svelte 5](https://svelte.dev/docs/svelte/overview) |
-| Backend | Rust |
-| Process discovery | [sysinfo](https://crates.io/crates/sysinfo) |
-| Design system | Vercel Noir (true black, [Geist](https://vercel.com/font) fonts) |
 
 ## Demo mode
 
