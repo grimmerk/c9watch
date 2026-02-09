@@ -140,6 +140,14 @@ c9watch/
 
 Press `Cmd+D` to toggle demo mode, which loads simulated sessions with animated status transitions. Useful for testing the UI without running real Claude Code sessions.
 
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Setting up the development environment
+- Coding standards and commit message format
+- Pull request process
+- Platform-specific contributions (Windows, Linux)
+
 ## License
 
 MIT
