@@ -45,7 +45,7 @@ pub struct Session {
 pub fn start_polling(app: AppHandle) {
     thread::spawn(move || {
         let app_handle = Arc::new(app);
-        let poll_interval = Duration::from_secs(2);
+        let poll_interval = Duration::from_millis(3500);
 
         // Create detector once and reuse across poll cycles
         let mut detector = match SessionDetector::new() {
