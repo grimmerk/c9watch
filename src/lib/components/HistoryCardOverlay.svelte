@@ -158,7 +158,7 @@
 							<h2 id="overlay-title" class="project-name">{entry.projectName}</h2>
 						</div>
 						<div class="header-meta">
-							<span class="message-count">{#if conversation && conversation.messages.length > BATCH_SIZE}{sw.startIndex + 1}–{sw.endIndex} / {/if}{conversation?.messages.length ?? 0} messages</span>
+							<span class="message-count">{#if !conversation}Loading…{:else}{#if conversation.messages.length > BATCH_SIZE}{sw.startIndex + 1}–{sw.endIndex} / {/if}{conversation.messages.length} messages{/if}</span>
 						</div>
 					</div>
 				</div>

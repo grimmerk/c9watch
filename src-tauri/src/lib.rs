@@ -22,7 +22,7 @@ use actions::{open_session as open_session_action, stop_session as stop_session_
 #[cfg(not(mobile))]
 use polling::{detect_and_enrich_sessions, start_polling, Session};
 use serde::Serialize;
-use session::{extract_messages, parse_all_entries, ImageBlock, MessageType};
+use session::{extract_messages, parse_conversation_entries, ImageBlock, MessageType};
 #[cfg(not(mobile))]
 use std::sync::Arc;
 #[cfg(not(mobile))]
@@ -94,7 +94,7 @@ pub fn get_conversation_data(session_id: &str) -> Result<Conversation, String> {
 
         let session_file = project_path.join(&session_filename);
         if session_file.exists() {
-            let entries = parse_all_entries(&session_file)
+            let entries = parse_conversation_entries(&session_file)
                 .map_err(|e| format!("Failed to parse session file: {}", e))?;
 
             let messages = extract_messages(&entries);

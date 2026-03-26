@@ -316,8 +316,12 @@ pub fn parse_last_n_entries<P: AsRef<Path>>(
     Ok(parse_jsonl_entries(lines))
 }
 
-/// Parse all entries from a session JSONL file
-pub fn parse_all_entries<P: AsRef<Path>>(path: P) -> Result<Vec<SessionEntry>, String> {
+/// Read and parse a session JSONL file, applying an optional line filter
+/// before JSON deserialization.
+fn read_and_parse_entries<P: AsRef<Path>>(
+    path: P,
+    line_filter: Option<&dyn Fn(&str) -> bool>,
+) -> Result<Vec<SessionEntry>, String> {
     let file =
         File::open(path.as_ref()).map_err(|e| format!("Failed to open JSONL file: {}", e))?;
 
@@ -325,10 +329,44 @@ pub fn parse_all_entries<P: AsRef<Path>>(path: P) -> Result<Vec<SessionEntry>, S
     let lines: Vec<String> = reader
         .lines()
         .map_while(Result::ok)
-        .filter(|line| !line.trim().is_empty())
+        .filter(|line| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                return false;
+            }
+            line_filter.map_or(true, |f| f(trimmed))
+        })
         .collect();
 
     Ok(parse_jsonl_entries(lines))
+}
+
+/// Parse all entries from a session JSONL file
+pub fn parse_all_entries<P: AsRef<Path>>(path: P) -> Result<Vec<SessionEntry>, String> {
+    read_and_parse_entries(path, None)
+}
+
+/// Entry types that are never rendered in the conversation viewer.
+/// Skipping these before JSON parse avoids deserializing large blobs
+/// (e.g. file-history-snapshot can be several KB each, progress entries
+/// are numerous but carry no conversation content).
+const SKIP_TYPES_FOR_CONVERSATION: &[&str] = &[
+    "\"type\":\"progress\"",
+    "\"type\":\"file-history-snapshot\"",
+    "\"type\":\"queue-operation\"",
+    "\"type\":\"last-prompt\"",
+    "\"type\":\"pr-link\"",
+];
+
+/// Parse only conversation-relevant entries from a session JSONL file.
+/// Skips entry types that are never rendered (progress, file-history-snapshot, etc.)
+/// to reduce JSON parse overhead for large sessions.
+pub fn parse_conversation_entries<P: AsRef<Path>>(path: P) -> Result<Vec<SessionEntry>, String> {
+    read_and_parse_entries(path, Some(&|line: &str| {
+        !SKIP_TYPES_FOR_CONVERSATION
+            .iter()
+            .any(|skip| line.contains(skip))
+    }))
 }
 
 /// Known XML tag prefixes that indicate system-generated (non-user) messages.
